@@ -8,12 +8,15 @@
 #     "pybind11>=2.4.3,<2.5.0",
 
 [build-system]
+build-backend = "mesonpep517.buildapi"
 requires = [
     "wheel",
     "setuptools",
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
     "pythran",
+    "mesonpep517",
+    "ninja",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
@@ -42,3 +45,15 @@ requires = [
     "numpy; python_version>='3.10'",
     "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
 ]
+
+[tool.mesonpep517.metadata]
+author = "scipy"
+author-email = "scipy-user@googlegroups.com"
+home-page = "https://www.scipy.org/"
+project-urls = [
+    "Source, https://github.com/scipy/scipy",
+    "Documentation, https://docs.scipy.org/"
+]
+summary = "SciPy is open-source software for mathematics, science, and engineering."
+description = "README.rst"
+module = "scipy"
