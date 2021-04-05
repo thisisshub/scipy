@@ -289,6 +289,21 @@ class TestBradford:
         assert_allclose(x, xx)
 
 
+class TestChi:
+
+    # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
+    #     1 - CDF[ChiDistribution[4], 10]
+    CHI_SF_10_4 = 9.83662422461598e-21
+
+    def test_sf(self):
+        s = stats.chi.sf(10, 4)
+        assert_allclose(s, self.CHI_SF_10_4, rtol=1e-15)
+
+    def test_isf(self):
+        x = stats.chi.isf(self.CHI_SF_10_4, 4)
+        assert_allclose(x, 10, rtol=1e-15)
+
+
 class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
@@ -3082,6 +3097,114 @@ class TestEntropy:
         qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
         assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
                                   stats.entropy(pk, qk, axis=1))
+
+    def test_entropy_broadcasting(self):
+        np.random.rand(0)
+        x = np.random.rand(3)
+        y = np.random.rand(2, 1)
+        res = stats.entropy(x, y, axis=-1)
+        assert_equal(res[0], stats.entropy(x, y[0]))
+        assert_equal(res[1], stats.entropy(x, y[1]))
+
+    def test_entropy_shape_mismatch(self):
+        x = np.random.rand(10, 1, 12)
+        y = np.random.rand(11, 2)
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(x, y)
+
+
+class TestDifferentialEntropy(object):
+    """
+    Results are compared with the R package vsgoftest.
+
+    # library(vsgoftest)
+    #
+    # samp <- c(<values>)
+    # entropy.estimate(x = samp, window = <window_length>)
+
+    """
+
+    def test_differential_entropy_base(self):
+
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal(100)
+
+        entropy = stats.differential_entropy(values)
+        assert_allclose(entropy, 1.342551, rtol=1e-6)
+
+        entropy = stats.differential_entropy(values, window_length=1)
+        assert_allclose(entropy, 1.122044, rtol=1e-6)
+
+        entropy = stats.differential_entropy(values, window_length=8)
+        assert_allclose(entropy, 1.349401, rtol=1e-6)
+
+    def test_differential_entropy_base_2d_nondefault_axis(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        entropy = stats.differential_entropy(values, axis=1)
+        assert_allclose(
+            entropy,
+            [1.342551, 1.341826, 1.293775],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=1)
+        assert_allclose(
+            entropy,
+            [1.122044, 1.102944, 1.129616],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=8)
+        assert_allclose(
+            entropy,
+            [1.349401, 1.338514, 1.292332],
+            rtol=1e-6,
+        )
+
+    def test_differential_entropy_raises_value_error(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        error_str = (
+            r"Window length \({window_length}\) must be positive and less "
+            r"than half the sample size \({sample_size}\)."
+        )
+
+        sample_size = values.shape[1]
+
+        for window_length in {-1, 0, sample_size//2, sample_size}:
+
+            formatted_error_str = error_str.format(
+                window_length=window_length,
+                sample_size=sample_size,
+            )
+
+            with assert_raises(ValueError, match=formatted_error_str):
+                stats.differential_entropy(
+                    values,
+                    window_length=window_length,
+                    axis=1,
+                )
+
+    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((100, 3))
+
+        entropy = stats.differential_entropy(values, axis=0)
+        default_entropy = stats.differential_entropy(values)
+        assert_allclose(entropy, default_entropy)
+
+    def test_base_differential_entropy_transposed(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        assert_allclose(
+            stats.differential_entropy(values.T).T,
+            stats.differential_entropy(values, axis=1),
+        )
 
 
 def TestArgsreduce():
