@@ -1,1 +1,1 @@
-subdir('constants')
+run_command(python, 'import scipy.constants as mod; mod.test()')
