@@ -13,3 +13,4 @@ if not python.found()
 endif
 
 subdir('scipy/constants')
+subdir('scipy/fft')
