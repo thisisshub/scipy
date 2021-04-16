@@ -1,8 +1,9 @@
 project(
-    'scipy',
+    'scipy', 'c',
     version: '1.6.2',
     license: 'BSD',
     meson_version: '>=0.55',
+    default_options : ['c_std=c11']
 )
 
 python = find_program('python3')
